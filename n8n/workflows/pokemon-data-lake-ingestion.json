@@ -1,4 +1,5 @@
 {
+  "id": "9b8f0c7d-6f5a-4c41-9e39-2d9a912a5e7b",
   "name": "Pokemon Data Lake - MinIO + PostgreSQL",
   "nodes": [
     {
@@ -58,13 +59,7 @@
       "position": [
         800,
         0
-      ],
-      "credentials": {
-        "aws": {
-          "id": "MINIO_CREDENTIAL_ID",
-          "name": "MinIO Data Lake"
-        }
-      }
+      ]
     },
     {
       "parameters": {
@@ -78,13 +73,7 @@
       "position": [
         1080,
         0
-      ],
-      "credentials": {
-        "postgres": {
-          "id": "POSTGRES_CREDENTIAL_ID",
-          "name": "Pokemon Lake PostgreSQL"
-        }
-      }
+      ]
     }
   ],
   "connections": {
@@ -136,6 +125,5 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "active": false,
-  "versionId": "pokemon-data-lake-demo-v1"
+  "active": false
 }

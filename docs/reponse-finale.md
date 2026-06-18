@@ -1,11 +1,11 @@
 # Réponse rédigée
 
-L'architecture obtenue se rapproche davantage d'un Data Lake / Lakehouse car elle sépare le stockage des fichiers et le catalogue relationnel.
-MinIO apporte une vraie couche de stockage objet : il peut conserver des JSON bruts, images, rapports ou fichiers d'erreurs sans les transformer immédiatement en lignes SQL.
-La conservation du brut est utile car elle permet de rejouer une ingestion, de corriger un traitement ou de comparer les données transformées avec la source d'origine.
-La base PostgreSQL ne stocke donc pas forcément le fichier lui-même, mais ses métadonnées : bucket, clé objet, type, taille, checksum, source et lien avec le Pokémon.
-Cette séparation évite d'alourdir la base avec des fichiers binaires ou semi-structurés qui sont mieux adaptés à un stockage objet.
-PostgreSQL garde son rôle fort : indexer, relier les fichiers aux Pokémon, tracer les traitements et rendre les recherches fiables.
-MinIO garde son rôle de zone durable pour les données brutes et les artefacts produits par les workflows.
-L'ensemble est plus riche qu'une simple base relationnelle car il combine données structurées, fichiers bruts, traçabilité d'ingestion et organisation par zones de stockage.
-On obtient ainsi une architecture plus évolutive, où de nouveaux traitements peuvent consommer les objets MinIO tout en s'appuyant sur le catalogue SQL.
+Cette architecture ressemble plus à un Data Lake / Lakehouse parce qu'on ne met pas tout directement dans PostgreSQL.
+MinIO sert de stockage objet pour garder les fichiers tels qu'ils sont : JSON bruts, images SVG et rapports CSV.
+C'est utile de garder les données brutes, car si un traitement est faux, on peut le relancer à partir du fichier d'origine.
+La base de données ne stocke donc pas forcément le contenu complet des fichiers.
+Elle garde surtout les informations importantes : nom du fichier, bucket, chemin, type, taille, checksum et Pokémon associé.
+PostgreSQL sert aussi à tracer les ingestions grâce à la table de logs avec le statut du traitement.
+Cette séparation est plus propre qu'une simple base relationnelle, car les fichiers restent dans un stockage adapté.
+La base joue le rôle de catalogue, tandis que MinIO joue le rôle de zone de stockage durable.
+On obtient donc une architecture plus complète, capable de gérer à la fois des données structurées et des fichiers bruts.

@@ -81,10 +81,10 @@ bash scripts/demo_ingest.sh
 Le script :
 
 1. démarre les services Docker ;
-2. génère un JSON brut de type PokéAPI pour Pikachu ;
-3. génère une image SVG de badge Pikachu ;
-4. génère un rapport CSV d'ingestion ;
-5. envoie les trois fichiers dans MinIO ;
+2. génère un JSON brut de type PokéAPI pour 6 Pokémon de référence ;
+3. génère une image SVG de badge pour chaque Pokémon ;
+4. génère un rapport CSV global d'ingestion ;
+5. envoie les fichiers dans MinIO ;
 6. insère les métadonnées dans `pokemon_files` ;
 7. insère les traces dans `file_ingestion_log` ;
 8. affiche les preuves SQL.
@@ -95,6 +95,19 @@ Toutes les commandes utiles sont dans :
 
 ```text
 docs/proof-commands.md
+```
+
+Les captures d'écran du TP sont à déposer directement à la racine du projet, à côté du `README.md`, pour qu'elles soient faciles à retrouver si l'envoi séparé sur Teams ne fonctionne pas.
+
+Exemples de noms :
+
+```text
+screen-01-docker-compose.png
+screen-02-minio-buckets.png
+screen-03-minio-objects.png
+screen-04-postgres-tables.png
+screen-05-postgres-metadata.png
+screen-06-n8n-workflow.png
 ```
 
 Réponse rédigée pour la partie D :

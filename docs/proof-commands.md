@@ -43,8 +43,8 @@ bash scripts/demo_ingest.sh
 
 Preuve attendue :
 
-- un objet JSON dans `raw-pokemon/pokeapi/pokemon/25/`
-- une image SVG dans `pokemon-images/generated/badges/25/`
+- des objets JSON dans `raw-pokemon/pokeapi/pokemon/`
+- des images SVG dans `pokemon-images/generated/badges/`
 - un rapport CSV dans `reports/ingestion/`
 - au moins une ligne dans `pokemon_files`
 - au moins une ligne dans `file_ingestion_log`

@@ -14,6 +14,8 @@ Manual Trigger
 
 ## Credentials à créer dans n8n
 
+Le fichier JSON s'importe sans credentials attachés. Après l'import, ouvrez les noeuds `Upload Raw JSON To MinIO` et `Register Metadata In PostgreSQL`, puis sélectionnez les credentials créés ci-dessous.
+
 ### MinIO Data Lake
 
 Type : AWS / S3.
