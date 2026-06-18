@@ -1,0 +1,2 @@
+pokemon_id,pokemon_name,bucket_name,object_key,file_name,file_type,size_bytes,checksum_sha256,status,processed_at
+25,pikachu,raw-pokemon,pokeapi/pokemon/25/pokemon_25_pikachu_20260618T142525Z.json,pokemon_25_pikachu_20260618T142525Z.json,raw_json,345,c8f8f69538104a63995f627931ade82eacc554733b426e9a08825ab515e6354f,success,20260618T142525Z

@@ -1,0 +1,12 @@
+.env
+.idea/
+data/generated/*
+!data/generated/.gitkeep
+!data/generated/raw/
+!data/generated/reports/
+!data/generated/raw/.gitkeep
+!data/generated/reports/.gitkeep
+
+__pycache__/
+*.pyc
+.DS_Store

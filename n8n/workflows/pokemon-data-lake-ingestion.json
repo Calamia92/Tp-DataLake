@@ -1,0 +1,141 @@
+{
+  "name": "Pokemon Data Lake - MinIO + PostgreSQL",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://pokeapi.co/api/v2/pokemon/pikachu",
+        "responseFormat": "json",
+        "options": {}
+      },
+      "id": "fetch-pokemon",
+      "name": "Fetch Pikachu From PokeAPI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\nconst pokemon = $input.first().json;\nconst now = new Date();\nconst stamp = now.toISOString().replace(/[-:]/g, '').replace(/\\.\\d{3}Z$/, 'Z');\nconst fileName = `pokemon_${pokemon.id}_${pokemon.name}_${stamp}.json`;\nconst objectKey = `pokeapi/pokemon/${pokemon.id}/${fileName}`;\nconst payload = JSON.stringify(pokemon, null, 2);\nconst checksum = crypto.createHash('sha256').update(payload).digest('hex');\n\nreturn [{\n  json: {\n    pokemon_id: pokemon.id,\n    pokemon_name: pokemon.name,\n    bucket_name: 'raw-pokemon',\n    object_key: objectKey,\n    file_name: fileName,\n    file_type: 'raw_json',\n    mime_type: 'application/json',\n    size_bytes: Buffer.byteLength(payload),\n    checksum_sha256: checksum,\n    source: 'n8n:pokeapi-http',\n    source_url: `https://pokeapi.co/api/v2/pokemon/${pokemon.name}`,\n    status: 'success',\n    workflow_run_id: $execution.id,\n    metadata_json: {\n      height: pokemon.height,\n      weight: pokemon.weight,\n      base_experience: pokemon.base_experience,\n      type_count: pokemon.types?.length ?? 0\n    }\n  },\n  binary: {\n    data: await this.helpers.prepareBinaryData(Buffer.from(payload), fileName, 'application/json')\n  }\n}];"
+      },
+      "id": "prepare-raw-object",
+      "name": "Prepare Raw JSON Object",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upload",
+        "bucketName": "={{ $json.bucket_name }}",
+        "fileName": "={{ $json.object_key }}",
+        "binaryPropertyName": "data",
+        "additionalFields": {
+          "acl": "private",
+          "contentType": "={{ $json.mime_type }}"
+        }
+      },
+      "id": "upload-minio",
+      "name": "Upload Raw JSON To MinIO",
+      "type": "n8n-nodes-base.awsS3",
+      "typeVersion": 2,
+      "position": [
+        800,
+        0
+      ],
+      "credentials": {
+        "aws": {
+          "id": "MINIO_CREDENTIAL_ID",
+          "name": "MinIO Data Lake"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH upsert_file AS (\n    INSERT INTO pokemon_files (\n        pokemon_id,\n        bucket_name,\n        object_key,\n        file_name,\n        file_type,\n        mime_type,\n        size_bytes,\n        checksum_sha256,\n        source,\n        source_url,\n        metadata_json\n    )\n    VALUES (\n        {{ $node[\"Prepare Raw JSON Object\"].json.pokemon_id }},\n        '{{ $node[\"Prepare Raw JSON Object\"].json.bucket_name }}',\n        '{{ $node[\"Prepare Raw JSON Object\"].json.object_key }}',\n        '{{ $node[\"Prepare Raw JSON Object\"].json.file_name }}',\n        '{{ $node[\"Prepare Raw JSON Object\"].json.file_type }}',\n        '{{ $node[\"Prepare Raw JSON Object\"].json.mime_type }}',\n        {{ $node[\"Prepare Raw JSON Object\"].json.size_bytes }},\n        '{{ $node[\"Prepare Raw JSON Object\"].json.checksum_sha256 }}',\n        '{{ $node[\"Prepare Raw JSON Object\"].json.source }}',\n        '{{ $node[\"Prepare Raw JSON Object\"].json.source_url }}',\n        '{{ JSON.stringify($node[\"Prepare Raw JSON Object\"].json.metadata_json) }}'::jsonb\n    )\n    ON CONFLICT (bucket_name, object_key) DO UPDATE\n    SET\n        size_bytes = EXCLUDED.size_bytes,\n        checksum_sha256 = EXCLUDED.checksum_sha256,\n        source = EXCLUDED.source,\n        source_url = EXCLUDED.source_url,\n        metadata_json = EXCLUDED.metadata_json,\n        ingested_at = now()\n    RETURNING file_id\n)\nINSERT INTO file_ingestion_log (\n    file_id,\n    pokemon_id,\n    file_name,\n    bucket_name,\n    object_key,\n    source,\n    status,\n    message,\n    size_bytes,\n    checksum_sha256,\n    workflow_run_id\n)\nSELECT\n    file_id,\n    {{ $node[\"Prepare Raw JSON Object\"].json.pokemon_id }},\n    '{{ $node[\"Prepare Raw JSON Object\"].json.file_name }}',\n    '{{ $node[\"Prepare Raw JSON Object\"].json.bucket_name }}',\n    '{{ $node[\"Prepare Raw JSON Object\"].json.object_key }}',\n    '{{ $node[\"Prepare Raw JSON Object\"].json.source }}',\n    '{{ $node[\"Prepare Raw JSON Object\"].json.status }}',\n    'n8n uploaded raw JSON to MinIO and registered metadata in PostgreSQL',\n    {{ $node[\"Prepare Raw JSON Object\"].json.size_bytes }},\n    '{{ $node[\"Prepare Raw JSON Object\"].json.checksum_sha256 }}',\n    '{{ $node[\"Prepare Raw JSON Object\"].json.workflow_run_id }}'\nFROM upsert_file\nRETURNING log_id, file_id, status, processed_at;"
+      },
+      "id": "register-metadata",
+      "name": "Register Metadata In PostgreSQL",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1080,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "POSTGRES_CREDENTIAL_ID",
+          "name": "Pokemon Lake PostgreSQL"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Pikachu From PokeAPI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Pikachu From PokeAPI": {
+      "main": [
+        [
+          {
+            "node": "Prepare Raw JSON Object",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Raw JSON Object": {
+      "main": [
+        [
+          {
+            "node": "Upload Raw JSON To MinIO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Raw JSON To MinIO": {
+      "main": [
+        [
+          {
+            "node": "Register Metadata In PostgreSQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "versionId": "pokemon-data-lake-demo-v1"
+}
